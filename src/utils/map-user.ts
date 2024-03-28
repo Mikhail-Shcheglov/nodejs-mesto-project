@@ -5,6 +5,7 @@ const mapUser = (user: IUser) => ({
   name: user.name,
   about: user.about,
   avatar: user.avatar,
+  email: user.email,
 });
 
 export default mapUser;

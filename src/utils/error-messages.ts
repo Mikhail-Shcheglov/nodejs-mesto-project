@@ -2,16 +2,23 @@ import { HTTP_STATUS } from './constants';
 
 const {
   BAD_REQUEST,
+  UNAUTHORIZED,
   FORBIDDEN,
   NOT_FOUND,
+  CONFLICT,
 } = HTTP_STATUS;
 
 const ERROR_MESSAGES = {
   USER: {
     [NOT_FOUND]: 'Пользователь по указанному _id не найден',
+    [UNAUTHORIZED]: 'Не авторизованный запрос',
 
     ADD: {
       [BAD_REQUEST]: 'Переданы некорректные данные при создании пользователя',
+      [CONFLICT]: 'Пользователь с указанной почтой уже существует.',
+    },
+    LOGIN: {
+      [UNAUTHORIZED]: 'Неправильные почта или пароль',
     },
     PROFILE_UPDATE: {
       [BAD_REQUEST]: 'Переданы некорректные данные при обновлении профиля',
@@ -26,7 +33,7 @@ const ERROR_MESSAGES = {
     [NOT_FOUND]: 'Карточка с указанным _id не найдена.',
 
     DELETE: {
-      [FORBIDDEN]: 'Не прав на удаление карты с указанным id',
+      [FORBIDDEN]: 'Попытка удалить чужую карточку',
     },
     LIKE: {
       [BAD_REQUEST]: 'Переданы некорректные данные для постановки/снятии лайка',

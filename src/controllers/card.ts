@@ -2,41 +2,58 @@ import { NextFunction, Request, Response } from 'express';
 
 import { RequestAuthorized } from '../interfaces/controller';
 import Card from '../models/card';
+import ForbiddenError from '../errors/forbidden-error';
 import NotFountError from '../errors/not-found';
 import { HTTP_STATUS } from '../utils/constants';
 import ERROR_MESSAGES from '../utils/error-messages';
 import mapCard from '../utils/map-card';
 
+const { CREATED, FORBIDDEN, NOT_FOUND } = HTTP_STATUS;
+const { CARD } = ERROR_MESSAGES;
+
 export const createCard = (
-  req: Request,
+  request: Request,
   res: Response,
   next: NextFunction,
-) => Card.create({
-  name: req.body.name,
-  link: req.body.link,
-})
-  .then((card) => {
-    if (!card) {
-      throw new NotFountError(ERROR_MESSAGES.CARD[404]);
-    }
+) => {
+  const req = request as RequestAuthorized;
 
-    res.status(HTTP_STATUS.CREATED).send({ data: mapCard(card) });
+  return Card.create({
+    name: req.body.name,
+    link: req.body.link,
+    owner: req.user?._id,
   })
-  .catch(next);
+    .then((card) => {
+      if (!card) {
+        throw new NotFountError(CARD[NOT_FOUND]);
+      }
+
+      res.status(CREATED).send({ data: mapCard(card) });
+    })
+    .catch(next);
+};
 
 export const deleteCard = (
-  req: Request,
+  request: Request,
   res: Response,
   next: NextFunction,
-) => Card.findByIdAndDelete(req.params.cardId)
-  .then((card): void => {
-    if (!card) {
-      throw new NotFountError(ERROR_MESSAGES.CARD[404]);
-    }
+) => {
+  const req = request as RequestAuthorized;
 
-    res.send({ data: mapCard(card) });
-  })
-  .catch(next);
+  return Card.findById(req.params.cardId)
+    .then((card): void => {
+      if (!card) {
+        throw new NotFountError(CARD[NOT_FOUND]);
+      }
+
+      if (card.owner.toString() !== req.user?._id) {
+        throw new ForbiddenError(CARD.DELETE[FORBIDDEN]);
+      }
+
+      res.send({ data: mapCard(card) });
+    })
+    .catch(next);
+};
 
 export const getCards = (req: Request, res: Response, next: NextFunction) => Card.find({})
   .then((cards = []) => {
@@ -54,7 +71,7 @@ export const likeCard = (request: Request, res: Response, next: NextFunction) =>
   )
     .then((card): void => {
       if (!card) {
-        throw new NotFountError(ERROR_MESSAGES.CARD[404]);
+        throw new NotFountError(CARD[NOT_FOUND]);
       }
 
       res.send({ data: mapCard(card) });
@@ -76,7 +93,7 @@ export const dislikeCard = (
   )
     .then((card) => {
       if (!card) {
-        throw new NotFountError(ERROR_MESSAGES.CARD[404]);
+        throw new NotFountError(CARD[NOT_FOUND]);
       }
 
       res.send({ data: mapCard(card) });
