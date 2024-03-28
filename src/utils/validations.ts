@@ -1,16 +1,28 @@
 import { Joi, celebrate } from 'celebrate';
+import { REG_EXP_URL } from './reg-exps';
+
+const customUrlValidation = (value: string, helpers: Joi.CustomHelpers<string>) => {
+  if (!REG_EXP_URL.test(value)) {
+    return helpers.error('string.url');
+  }
+
+  return value;
+};
+
+const PATTERN_URL = Joi.string().custom(customUrlValidation).required().messages({
+  'string.url': 'Передана не корректная ссылка',
+});
 
 const PATTERN_ABOUT = {
-  about: Joi.string().min(2).max(200).messages({
-    'string.max': 'Описание не может быть длинее 200 символов',
-    'string.min': 'Описание не может быть короче 2 символов',
-  }),
+  about: Joi.string().min(2).max(200).required()
+    .messages({
+      'string.max': 'Описание не может быть длинее 200 символов',
+      'string.min': 'Описание не может быть короче 2 символов',
+    }),
 };
 
 const PATTERN_AVATAR = {
-  avatar: Joi.string().uri().messages({
-    'string.uri': 'Ссылка для нового аватара должна быть валидной',
-  }),
+  avatar: PATTERN_URL,
 };
 
 const PATTERN_EMAIL = {
@@ -20,8 +32,13 @@ const PATTERN_EMAIL = {
     }),
 };
 
+const PATTERN_MONGO_DB_ID = Joi.string().alphanum().length(24).required()
+  .messages({
+    'string.length': 'Длина идентификатора должна быть ровно 24 символа',
+  });
+
 const PATTERN_NAME = {
-  name: Joi.string().min(2).max(30)
+  name: Joi.string().min(2).max(30).required()
     .messages({
       'string.min': 'Имя не может быть короче 2 символов',
       'string.max': 'Имя не может быть длинее 30 символов',
@@ -62,5 +79,21 @@ export const validationProfileUpdation = () => celebrate({
 export const validateAvatarUpdation = () => celebrate({
   body: Joi.object().keys({
     ...PATTERN_AVATAR,
+  }),
+});
+
+export const validateRouteParamIds = (...args: string[]) => celebrate({
+  params: Joi.object().keys({
+    ...args.reduce((result, key) => ({
+      ...result,
+      [key]: PATTERN_MONGO_DB_ID,
+    }), {} as Record<string, Joi.StringSchema<string>>),
+  }),
+});
+
+export const validateCreateCardData = () => celebrate({
+  body: Joi.object().keys({
+    ...PATTERN_NAME,
+    link: PATTERN_URL,
   }),
 });

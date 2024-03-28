@@ -1,12 +1,11 @@
 import jwt from 'jsonwebtoken';
 
+import config from '../../config';
 import IUser from '../interfaces/user';
 import UnauthorizedError from '../errors/unauthorized-error';
 import ERROR_MESSAGES from '../utils/error-messages';
 import { Middleware } from '../interfaces/middlewares';
-import { DEFAULT_JWT_SECRET, HTTP_STATUS } from '../utils';
-
-const { JWT_SECRET = DEFAULT_JWT_SECRET } = process.env;
+import { HTTP_STATUS } from '../utils';
 
 const { UNAUTHORIZED } = HTTP_STATUS;
 
@@ -16,7 +15,7 @@ const auth: Middleware = (req, res, next) => {
   const token = req.cookies.jwt;
 
   try {
-    req.user = jwt.verify(token, JWT_SECRET) as Pick<IUser, '_id'>;
+    req.user = jwt.verify(token, config.jwtSecret) as Pick<IUser, '_id'>;
 
     next();
   } catch (err) {

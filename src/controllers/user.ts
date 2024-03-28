@@ -1,29 +1,34 @@
 import { NextFunction, Request, Response } from 'express';
+import pick from 'lodash.pick';
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 
+import config from '../../config';
 import User from '../models/user';
-import NotFountError from '../errors/not-found';
 import ERROR_MESSAGES from '../utils/error-messages';
-import { DEFAULT_JWT_SECRET, DEFAULT_SALT, HTTP_STATUS } from '../utils/constants';
+import { HTTP_STATUS } from '../utils/constants';
 import mapUser from '../utils/map-user';
 import { RequestAuthorized } from '../interfaces/controller';
 import UnauthorizedError from '../errors/unauthorized-error';
 import ConflictError from '../errors/conflict-error';
+import { UserUpdatableKey } from '../interfaces/user';
+import { handleUserResponse } from '../utils/decorators';
 
-const {
-  JWT_SECRET = DEFAULT_JWT_SECRET,
-  SALT = DEFAULT_SALT,
-} = process.env;
+const { UNAUTHORIZED, CONFLICT } = HTTP_STATUS;
 
-const { UNAUTHORIZED, NOT_FOUND, CONFLICT } = HTTP_STATUS;
+const updateUser = (keys: UserUpdatableKey[]) => (request: Request) => {
+  const req = request as RequestAuthorized;
+  const update = pick(req.body, keys);
+
+  return User.updateUser(req.user._id, update);
+};
 
 export const createUser = (req: Request, res: Response, next: NextFunction) => {
   const {
     about, avatar, email, name, password,
   } = req.body;
 
-  return bcrypt.hash(password, SALT)
+  return bcrypt.hash(password, config.salt_length)
     .then((hash) => User.create({
       about,
       avatar,
@@ -32,10 +37,6 @@ export const createUser = (req: Request, res: Response, next: NextFunction) => {
       password: hash,
     }))
     .then((user) => {
-      if (!user) {
-        throw new NotFountError(ERROR_MESSAGES.USER[NOT_FOUND]);
-      }
-
       res
         .status(HTTP_STATUS.CREATED)
         .send({
@@ -51,39 +52,13 @@ export const createUser = (req: Request, res: Response, next: NextFunction) => {
     });
 };
 
-export const getProfile = (
-  request: Request,
-  res: Response,
-  next: NextFunction,
-) => {
+export const getProfile = handleUserResponse((request: Request) => {
   const req = request as RequestAuthorized;
 
-  console.log('req.user?._id', req.user?._id);
+  return User.findById(req.user?._id);
+});
 
-  return User.findById(req.user?._id)
-    .then((user) => {
-      if (!user) {
-        throw new NotFountError(ERROR_MESSAGES.USER[NOT_FOUND]);
-      }
-
-      res.send(mapUser(user));
-    })
-    .catch(next);
-};
-
-export const getUserById = (
-  req: Request,
-  res: Response,
-  next: NextFunction,
-) => User.findById(req.params.userId)
-  .then((user) => {
-    if (!user) {
-      throw new NotFountError(ERROR_MESSAGES.USER[NOT_FOUND]);
-    }
-
-    res.send({ data: mapUser(user) });
-  })
-  .catch(next);
+export const getUserById = handleUserResponse((req: Request) => User.findById(req.params.userId));
 
 export const getUsers = (_: Request, res: Response, next: NextFunction) => User.find({})
   .then((users = []) => {
@@ -107,7 +82,7 @@ export const login = (request: Request, res: Response, next: NextFunction) => {
 
         const token = jwt.sign(
           { _id: user._id },
-          JWT_SECRET,
+          config.jwtSecret,
           { expiresIn: '7d' },
         );
 
@@ -117,41 +92,6 @@ export const login = (request: Request, res: Response, next: NextFunction) => {
     .catch(next);
 };
 
-export const updateProfile = (request: Request, res: Response, next: NextFunction) => {
-  const req = request as RequestAuthorized;
-  const { about, name } = req.body;
+export const updateProfile = handleUserResponse(updateUser(['about', 'name']));
 
-  return User.findByIdAndUpdate(
-    req.user?._id,
-    { about, name },
-    { new: true, runValidators: true },
-  )
-    .then((user): void => {
-      if (!user) {
-        throw new NotFountError(ERROR_MESSAGES.USER[NOT_FOUND]);
-      }
-
-      res.send({ data: mapUser(user) });
-    })
-    .catch(next);
-};
-
-export const updateProfileAvatar = (request: Request, res: Response, next: NextFunction) => {
-  const req = request as RequestAuthorized;
-
-  const { avatar } = req.body;
-
-  return User.findByIdAndUpdate(
-    req.user?._id,
-    { avatar },
-    { new: true, runValidators: true },
-  )
-    .then((user) => {
-      if (!user) {
-        throw new NotFountError(ERROR_MESSAGES.USER[NOT_FOUND]);
-      }
-
-      res.send({ data: mapUser(user) });
-    })
-    .catch(next);
-};
+export const updateProfileAvatar = handleUserResponse(updateUser(['avatar']));

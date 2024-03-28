@@ -1,9 +1,9 @@
-import mongoose from 'mongoose';
+import { model, Schema } from 'mongoose';
 
 import ICard from '../interfaces/card';
 import { REG_EXP_URL } from '../utils/reg-exps';
 
-const cardSchema = new mongoose.Schema({
+const cardSchema = new Schema({
   name: {
     type: String,
     required: true,
@@ -15,15 +15,17 @@ const cardSchema = new mongoose.Schema({
     required: true,
     validate: {
       validator: (value: string) => REG_EXP_URL.test(value),
-      message: 'Не корректная ссылка для аватара',
+      message: 'Передана не корректная ссылка',
     },
   },
   owner: {
-    type: mongoose.Schema.ObjectId,
+    type: Schema.ObjectId,
+    ref: 'user',
     require: true,
   },
   likes: {
-    type: [mongoose.Schema.ObjectId],
+    type: [Schema.ObjectId],
+    ref: 'user',
     default: [],
   },
   createdAt: {
@@ -32,4 +34,4 @@ const cardSchema = new mongoose.Schema({
   },
 });
 
-export default mongoose.model<ICard>('card', cardSchema);
+export default model<ICard>('card', cardSchema);

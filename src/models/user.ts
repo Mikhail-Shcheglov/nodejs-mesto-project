@@ -1,10 +1,17 @@
-import { model, Schema } from 'mongoose';
+import {
+  model, Model, Schema,
+} from 'mongoose';
 import isEmail from 'validator/lib/isEmail';
 
 import { REG_EXP_URL } from '../utils/reg-exps';
-import IUser from '../interfaces/user';
+import IUser, { UserUpdatePayload } from '../interfaces/user';
 
-const userSchema = new Schema<IUser>(
+interface UserModel extends Model<IUser> {
+  // eslint-disable-next-line no-unused-vars
+  updateUser(id: string, update: UserUpdatePayload): Promise<IUser>;
+}
+
+const userSchema = new Schema<IUser, UserModel>(
   {
     about: {
       type: String,
@@ -46,4 +53,13 @@ const userSchema = new Schema<IUser>(
   { versionKey: false },
 );
 
-export default model<IUser>('user', userSchema);
+// eslint-disable-next-line prefer-arrow-callback
+userSchema.static('updateUser', function updateUser(id: string, update: UserUpdatePayload) {
+  return this.findByIdAndUpdate(
+    id,
+    update,
+    { new: true, runValidators: true },
+  );
+});
+
+export default model<IUser, UserModel>('user', userSchema);

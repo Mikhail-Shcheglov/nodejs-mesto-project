@@ -1,10 +1,5 @@
 /* eslint-disable no-unused-vars */
 /* eslint-disable no-shadow */
-export const DEFAULT_PORT = 3000;
-export const DEFAULT_MONGO_DB_PATH = 'mongodb://localhost:27017';
-export const DEFAULT_MONGO_DB_NAME = 'mestodb';
-export const DEFAULT_MONGO_DB_URL = `${DEFAULT_MONGO_DB_PATH}/${DEFAULT_MONGO_DB_NAME}`;
-
 export const enum HTTP_METHOD {
   GET = 'GET',
   POST = 'POST',
@@ -80,7 +75,3 @@ export enum HTTP_STATUS {
   NOT_EXTENDED = 510,
   NETWORK_AUTHENTICATION_REQUIRED = 511,
 }
-
-export const DEFAULT_JWT_SECRET = '11d941775d6ce8fbade1af71e80ff34d8c8bce60e8b7e426868793bc092f9533';
-
-export const DEFAULT_SALT = 10;

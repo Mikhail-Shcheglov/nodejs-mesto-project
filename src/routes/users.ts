@@ -1,6 +1,6 @@
 import { Router } from 'express';
 
-import { validateAvatarUpdation, validationProfileUpdation } from '../utils/validations';
+import { validateAvatarUpdation, validateRouteParamIds, validationProfileUpdation } from '../utils/validations';
 import {
   getProfile,
   getUserById,
@@ -11,14 +11,14 @@ import {
 
 const router = Router();
 
-router.get('/', getUsers);
+router.get('/users', getUsers);
 
-router.get('/me', getProfile);
+router.get('/users/me', getProfile);
 
-router.patch('/me', validationProfileUpdation(), updateProfile);
+router.patch('/users/me', validationProfileUpdation(), updateProfile);
 
-router.patch('/me/avatar', validateAvatarUpdation(), updateProfileAvatar);
+router.patch('/users/me/avatar', validateAvatarUpdation(), updateProfileAvatar);
 
-router.get('/:userId', getUserById);
+router.get('/users/:userId', validateRouteParamIds('userId'), getUserById);
 
 export default router;

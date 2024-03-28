@@ -40,6 +40,8 @@ const ERROR_MESSAGES = {
       [NOT_FOUND]: 'Передан несуществующий _id карточки',
     },
   },
+
+  [NOT_FOUND]: 'Запрашиваемый ресурс не найден',
 };
 
 export default ERROR_MESSAGES;
